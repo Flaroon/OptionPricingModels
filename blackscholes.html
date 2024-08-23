@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Black-Scholes Option Pricing Model</title>
+    <!-- Include Jersey 10 Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+    <!-- Include MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js for visualization -->
+
+    <style>
+        html, body {
+            font-family: "Jersey 10", sans-serif;
+            background-color: #EDD4B2;
+            color: #4D243D;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            height: 100vh;
+            margin: 0;
+            padding: 10px 10px;
+            overflow: hidden;
+        }
+
+        .main-content {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+        }
+        .left-panel {
+            width: 57%;
+            display: flex;
+            flex-direction: column;
+        }
+        .container, .visualization-section {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .inputs {
+            margin-bottom: 10px;
+            margin-right: 25px;
+        }
+        .inputs label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        .inputs input {
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #4D243D;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 10px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        button {
+            font-family: "Jersey 10", sans-serif;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 2px solid #4D243D;
+            background-color: #D0A98F;
+            color: #4D243D;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            width: 48%;
+        }
+        button:hover {
+            background-color: #4D243D;
+            color: #EDD4B2;
+            transform: translateY(-5px);
+            box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.4);
+        }
+        .result-container {
+            margin-top: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+        }
+        .result {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            color: #4D243D;
+        }
+        .info-section {
+           width: 40%;
+           height: 93%;
+           display: flex;
+           flex-direction: column;
+           background: rgba(255, 255, 255, 0.8);
+           padding: 20px;
+           border-radius: 10px;
+           box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+           text-align: left;
+           overflow-y: auto;
+        }
+
+        /* Custom Scrollbar */
+        .info-section::-webkit-scrollbar {
+            width: 12px;
+        }
+
+        .info-section::-webkit-scrollbar-track {
+            background: #D0A98F;
+            border-radius: 10px;
+        }
+
+        .info-section::-webkit-scrollbar-thumb {
+            background-color: #4D243D;
+            border-radius: 10px;
+            border: 3px solid #D0A98F;
+        }
+
+        .info-section::-webkit-scrollbar-thumb:hover {
+            background-color: #EDD4B2;
+        }
+
+        .info-section h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        .info-section h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .info-section p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .info-section .equation {
+            background-color: #f9f9f9;
+            padding: 10px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+        .visualization-section h3 {
+            margin-bottom: 15px;
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+        .visualization-section .simulation-visualization {
+            width: 100%;
+            height: 310px;
+            background-color: #f0f0f0;
+            border: 2px solid #4D243D;
+            border-radius: 5px;
+            overflow: hidden;
+            color: #4D243D;
+            font-size: 1.5em;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .return-button {
+            padding: 20px;
+            font-size: 1.5em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 2px solid #4D243D;
+            background-color: #D0A98F;
+            color: #4D243D;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 100%;
+            margin-top: 0;
+        }
+        .return-button:hover {
+            background-color: #4D243D;
+            color: #EDD4B2;
+            transform: translateY(-5px);
+            box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="left-panel">
+            <div class="container">
+                <h1>Black-Scholes Option Pricing Model</h1>
+                <div class="inputs">
+                    <label for="stock-price">Current Stock Price:</label>
+                    <input type="number" id="stock-price" placeholder="e.g., 100">
+
+                    <label for="strike-price">Strike Price:</label>
+                    <input type="number" id="strike-price" placeholder="e.g., 100">
+
+                    <label for="days-to-maturity">Days to Maturity:</label>
+                    <input type="number" id="days-to-maturity" placeholder="e.g., 365">
+
+                    <label for="risk-free-rate">Risk-Free Interest Rate (as a decimal):</label>
+                    <input type="number" step="0.01" id="risk-free-rate" placeholder="e.g., 0.05">
+
+                    <label for="volatility">Volatility (as a decimal):</label>
+                    <input type="number" step="0.01" id="volatility" placeholder="e.g., 0.2">
+                </div>
+                <div class="buttons">
+                    <button onclick="calculateBlackScholesPrice('call')">Calculate Call Price</button>
+                    <button onclick="calculateBlackScholesPrice('put')">Calculate Put Price</button>
+                </div>
+                <div class="result-container">
+                    <div class="result" id="result">
+                        Estimated Option Price: $0.00
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization-section">
+                <h3>Option Price Visualization</h3>
+                <canvas id="bsVisualizationCanvas" class="simulation-visualization"></canvas>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div>
+                <h2>About the Black-Scholes Model</h2>
+                <p>
+                    The Black-Scholes model is a fundamental financial model used to estimate the price of European-style options, which can only be exercised at expiration. Developed by economists Fischer Black and Myron Scholes, with additional contributions by Robert Merton, the model provides a closed-form solution for calculating the theoretical value of call and put options.
+                </p>
+        
+                <h3>Assumptions of the Black-Scholes Model</h3>
+                <p>
+                    The Black-Scholes model is built on several key assumptions:
+                </p>
+                <ul>
+                    <li>The price of the underlying asset follows a geometric Brownian motion with constant drift and volatility.</li>
+                    <li>The markets are frictionless, meaning there are no transaction costs or taxes, and assets can be bought or sold in any quantity.</li>
+                    <li>There are no dividends paid out during the life of the option.</li>
+                    <li>The risk-free interest rate is constant and known over the life of the option.</li>
+                    <li>Options can only be exercised at expiration (European options).</li>
+                    <li>There are no arbitrage opportunities (the market is in equilibrium).</li>
+                </ul>
+        
+                <h3>Derivation of the Black-Scholes Formula</h3>
+                <p>
+                    The Black-Scholes formula is derived using the concept of a hedged portfolio, which involves holding a position in both the option and the underlying asset. By continuously adjusting this portfolio, a risk-free position can be maintained, allowing the application of the risk-free interest rate to value the option. The formula is:
+                </p>
+                <div class="equation">
+                    <strong>Call Option Price:</strong><br>
+                    \( C = S_0 \cdot N(d_1) - K \cdot e^{-rT} \cdot N(d_2) \)
+                </div>
+                <div class="equation">
+                    <strong>Put Option Price:</strong><br>
+                    \( P = K \cdot e^{-rT} \cdot N(-d_2) - S_0 \cdot N(-d_1) \)
+                </div>
+                <p>
+                    Where:
+                </p>
+                <ul>
+                    <li>\( S_0 \) is the current stock price.</li>
+                    <li>\( K \) is the strike price of the option.</li>
+                    <li>\( T \) is the time to maturity in years.</li>
+                    <li>\( r \) is the risk-free interest rate.</li>
+                    <li>\( \sigma \) is the volatility of the stock's returns.</li>
+                    <li>\( N(\cdot) \) is the cumulative distribution function of the standard normal distribution.</li>
+                    <li>\( d_1 = \frac{\ln(S_0/K) + (r + \sigma^2/2)T}{\sigma\sqrt{T}} \)</li>
+                    <li>\( d_2 = d_1 - \sigma\sqrt{T} \)</li>
+                </ul>
+        
+                <h3>Practical Applications</h3>
+                <p>
+                    The Black-Scholes model is widely used in financial markets for several purposes:
+                </p>
+                <ul>
+                    <li><strong>Option Pricing:</strong> It provides a quick and efficient method for estimating the fair value of European-style options.</li>
+                    <li><strong>Volatility Estimation:</strong> Implied volatility, a measure of market expectations of future volatility, is often derived from the Black-Scholes model by inverting the formula.</li>
+                    <li><strong>Risk Management:</strong> The model helps in understanding the sensitivity of option prices to various factors, aiding in the hedging of portfolios.</li>
+                    <li><strong>Market Making:</strong> Traders and market makers use the model to quote bid and ask prices for options in the market.</li>
+                </ul>
+        
+                <h3>Limitations of the Black-Scholes Model</h3>
+                <p>
+                    Despite its widespread use, the Black-Scholes model has several limitations:
+                </p>
+                <ul>
+                    <li><strong>Assumption of Constant Volatility:</strong> The model assumes that volatility is constant, which is often not true in real markets where volatility can change over time.</li>
+                    <li><strong>No Dividends:</strong> The basic model does not account for dividends, which can affect the price of options on dividend-paying stocks. Adjustments are required for such cases.</li>
+                    <li><strong>European Options Only:</strong> The model is designed for European options and does not directly apply to American options, which can be exercised before expiration.</li>
+                    <li><strong>Assumption of a Perfect Market:</strong> The assumption of no transaction costs, taxes, and infinite liquidity is unrealistic in practical scenarios.</li>
+                </ul>
+        
+                <h3>Extensions of the Black-Scholes Model</h3>
+                <p>
+                    Several extensions and variations of the Black-Scholes model have been developed to address its limitations:
+                </p>
+                <ul>
+                    <li><strong>Black-Scholes-Merton Model:</strong> This extension includes dividends by adjusting the underlying asset's price.</li>
+                    <li><strong>Stochastic Volatility Models:</strong> These models, like the Heston model, allow volatility to change over time, capturing more complex market dynamics.</li>
+                    <li><strong>American Option Pricing:</strong> Numerical methods, such as the binomial tree model, are used to price American options.</li>
+                </ul>
+        
+                <h3>Historical Impact</h3>
+                <p>
+                    The development of the Black-Scholes model was a landmark in financial theory, leading to a significant expansion of options trading and the growth of derivative markets. The model's introduction also contributed to the awarding of the Nobel Memorial Prize in Economic Sciences to Scholes and Merton in 1997 (Fischer Black had passed away in 1995 and was therefore ineligible for the Nobel).
+                </p>
+            </div>
+            <button class="return-button" onclick="location.href='index.html'">Return to Home</button>
+        </div>        
+    </div>
+
+    <script>
+        function calculateBlackScholesPrice(optionType) {
+            const S = parseFloat(document.getElementById('stock-price').value);
+            const K = parseFloat(document.getElementById('strike-price').value);
+            const T = parseFloat(document.getElementById('days-to-maturity').value) / 365;
+            const r = parseFloat(document.getElementById('risk-free-rate').value);
+            const sigma = parseFloat(document.getElementById('volatility').value);
+    
+            if (isNaN(S) || isNaN(K) || isNaN(T) || isNaN(r) || isNaN(sigma)) {
+                document.getElementById('result').innerText = "Please enter valid inputs.";
+                return;
+            }
+    
+            const d1 = (Math.log(S / K) + (r + 0.5 * sigma ** 2) * T) / (sigma * Math.sqrt(T));
+            const d2 = d1 - sigma * Math.sqrt(T);
+    
+            const Nd1 = normalCDF(d1);
+            const Nd2 = normalCDF(d2);
+    
+            let optionPrice;
+    
+            if (optionType === 'call') {
+                optionPrice = S * Nd1 - K * Math.exp(-r * T) * Nd2;
+            } else {
+                optionPrice = K * Math.exp(-r * T) * normalCDF(-d2) - S * normalCDF(-d1);
+            }
+    
+            document.getElementById('result').innerText = `Estimated ${optionType === 'call' ? 'Call' : 'Put'} Option Price: $${optionPrice.toFixed(2)}`;
+    
+            drawBSVisualization(d1, d2);
+        }
+    
+        function drawBSVisualization(d1, d2) {
+            const canvas = document.getElementById('bsVisualizationCanvas');
+            const ctx = canvas.getContext('2d');
+    
+            // Set canvas dimensions
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+    
+            // Clear the canvas
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+            // Define properties for the normal distribution
+            const mean = 0;
+            const stdDev = 1;
+            const step = 0.01;
+            const scaleX = canvas.width / 6; // 6 standard deviations total (-3 to 3)
+            const scaleY = canvas.height * 2; // Adjust scaling for height
+    
+            // Draw the normal distribution curve
+            ctx.beginPath();
+            ctx.moveTo(0, canvas.height);
+    
+            for (let x = -3; x <= 3; x += step) {
+                const y = (1 / (stdDev * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * ((x - mean) / stdDev) ** 2);
+                const canvasX = (x + 3) * scaleX;
+                const canvasY = canvas.height - (y * scaleY);
+                ctx.lineTo(canvasX, canvasY);
+            }
+    
+            ctx.strokeStyle = '#4D243D';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+    
+            // Mark d1 and d2 on the distribution
+            plotNormalMarker(ctx, d1, canvas, '#D0A98F', 'd1');
+            plotNormalMarker(ctx, d2, canvas, '#EDD4B2', 'd2');
+        }
+    
+        // Function to plot markers on the normal distribution
+        function plotNormalMarker(ctx, dValue, canvas, color, label) {
+            const mean = 0;
+            const stdDev = 1;
+            const scaleX = canvas.width / 6;
+            const scaleY = canvas.height * 2;
+            const y = (1 / (stdDev * Math.sqrt(2 * Math.PI))) * Math.exp(-0.5 * ((dValue - mean) / stdDev) ** 2);
+            const canvasX = (dValue + 3) * scaleX;
+            const canvasY = canvas.height - (y * scaleY);
+    
+            ctx.beginPath();
+            ctx.arc(canvasX, canvasY, 5, 0, 2 * Math.PI);
+            ctx.fillStyle = color;
+            ctx.fill();
+    
+            ctx.fillStyle = '#4D243D';
+            ctx.fillText(`${label}: ${dValue.toFixed(2)}`, canvasX + 10, canvasY - 10);
+        }
+    
+        // Cumulative distribution function for the standard normal distribution
+        function normalCDF(x) {
+            const sign = x >= 0 ? 1 : -1;
+            x = Math.abs(x) / Math.sqrt(2);
+            const t = 1 / (1 + 0.3275911 * x);
+            const a1 = 0.254829592;
+            const a2 = -0.284496736;
+            const a3 = 1.421413741;
+            const a4 = -1.453152027;
+            const a5 = 1.061405429;
+    
+            const erf = 1 - (((((a5 * t + a4) * t) + a3) * t + a2) * t + a1) * t * Math.exp(-x * x);
+            return (1 / 2) * (1 + sign * erf);
+        }
+    </script>
+    
+</body>
+</html>

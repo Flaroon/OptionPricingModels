@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Binomial Option Pricing Model</title>
+    <!-- Include Jersey 10 Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+    <!-- Include MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        html, body {
+            font-family: "Jersey 10", sans-serif;
+            background-color: #EDD4B2; /* Single background color */
+            color: #4D243D;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top to reduce space */
+            height: 100vh;
+            margin: 0;
+            padding: 10px 10px;
+            overflow: hidden; /* Disable scrolling */
+        }
+
+        .main-content {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+        }
+        .left-panel {
+            width: 57%;
+            display: flex;
+            flex-direction: column;
+        }
+        .container, .visualization-section {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .inputs {
+            margin-bottom: 10px;
+            margin-right: 25px;
+        }
+        .inputs label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        .inputs input {
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #4D243D;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 10px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        button {
+            font-family: "Jersey 10", sans-serif;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 2px solid #4D243D;
+            background-color: #D0A98F;
+            color: #4D243D;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            width: 48%;
+        }
+        button:hover {
+            background-color: #4D243D;
+            color: #EDD4B2;
+            transform: translateY(-5px);
+            box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.4);
+        }
+        .result-container {
+            margin-top: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+        }
+        .result {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            color: #4D243D;
+        }
+        .info-section {
+           width: 40%;
+           height: 93%;
+           display: flex;
+           flex-direction: column;
+           background: rgba(255, 255, 255, 0.8);
+           padding: 20px;
+           border-radius: 10px;
+           box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+           text-align: left;
+        }
+        .info-section h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        .info-section p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            line-height: 1.6;
+        }
+        .info-section .equation {
+            background-color: #f9f9f9;
+            padding: 10px;
+            font-size: 1.7em;
+            border-radius: 5px;
+            box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+        .visualization-section h3 {
+            margin-bottom: 15px;
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+        .visualization-section .tree-visualization {
+            height: 230px;
+            background-color: #f0f0f0;
+            border: 2px solid #4D243D;
+            border-radius: 5px;
+            overflow: auto; /* Allow scroll if the tree is too big */
+            color: #4D243D;
+            font-size: 1.5em;
+            /* Custom scrollbar styles */
+            scrollbar-width: thin;
+            scrollbar-color: #4D243D #D0A98F;
+        }
+        .visualization-section .tree-visualization::-webkit-scrollbar {
+            width: 12px;
+        }
+        .visualization-section .tree-visualization::-webkit-scrollbar-track {
+            background: #D0A98F;
+            border-radius: 5px;
+        }
+        .visualization-section .tree-visualization::-webkit-scrollbar-thumb {
+            background-color: #4D243D;
+            border-radius: 5px;
+            border: 3px solid #D0A98F;
+        }
+        .return-button {
+            padding: 20px;
+            font-size: 1.5em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 2px solid #4D243D;
+            background-color: #D0A98F;
+            color: #4D243D;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 100%;
+            margin-top: 0; /* Remove any margin on top of the button */
+        }
+        .return-button:hover {
+            background-color: #4D243D;
+            color: #EDD4B2;
+            transform: translateY(-5px);
+            box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="left-panel">
+            <div class="container">
+                <h1>Binomial Option Pricing Model</h1>
+                <div class="inputs">
+                    <label for="stock-price">Current Stock Price:</label>
+                    <input type="number" id="stock-price" placeholder="e.g., 100">
+
+                    <label for="strike-price">Strike Price:</label>
+                    <input type="number" id="strike-price" placeholder="e.g., 100">
+
+                    <label for="days-to-maturity">Days to Maturity:</label>
+                    <input type="number" id="days-to-maturity" placeholder="e.g., 365">
+
+                    <label for="risk-free-rate">Risk-Free Interest Rate (as a decimal):</label>
+                    <input type="number" step="0.01" id="risk-free-rate" placeholder="e.g., 0.05">
+
+                    <label for="volatility">Volatility (as a decimal):</label>
+                    <input type="number" step="0.01" id="volatility" placeholder="e.g., 0.2">
+
+                    <label for="time-steps">Number of Time Steps:</label>
+                    <input type="number" id="time-steps" placeholder="e.g., 100">
+                </div>
+                <div class="buttons">
+                    <button onclick="calculateOptionPrice('call')">Calculate Call Price</button>
+                    <button onclick="calculateOptionPrice('put')">Calculate Put Price</button>
+                </div>
+                <div class="result-container">
+                    <div class="result" id="result">
+                        Estimated Option Price: $0.00
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization-section">
+                <h3>Tree Visualization</h3>
+                <div class="tree-visualization" id="tree-visualization">
+                    <!-- Placeholder for the tree visualization -->
+                    Tree visualization will be displayed here.
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div>
+                <h2>About the Binomial Option Pricing Model</h2>
+                <p>
+                    The Binomial Option Pricing Model (BOPM) is a widely-used method for valuing options, especially in situations where the option has complex features, such as American options, which can be exercised before the expiration date. The BOPM divides the time to expiration into a series of intervals or steps, creating a binomial tree of possible asset prices.
+                </p>
+                <p>
+                    At each step in the tree, the asset price can move up or down by a certain factor. These factors are calculated based on the volatility of the asset and the length of the time step. The model assumes that at each node in the tree, the price of the underlying asset can go up by a factor \( u \) or down by a factor \( d \). The probabilities of these up and down movements are derived under the risk-neutral measure, which is a theoretical probability measure where all securities are priced such that they earn the risk-free rate of return.
+                </p>
+                <p>
+                    The value of the option is then determined by working backwards from the end of the tree (where the payoff is known at expiration) to the present. At each node, the option value is calculated as the discounted expected value of the option at the next time step. This approach allows the BOPM to handle options with early exercise features (like American options) and options on assets with varying volatility.
+                </p>
+                <div class="equation">
+                    <strong>Call Option Price:</strong><br>
+                    \( V_i = e^{-r \Delta t} [p \cdot V_{i+1}^u + (1-p) \cdot V_{i+1}^d] \)
+                </div>
+                <div class="equation">
+                    <strong>Put Option Price:</strong><br>
+                    \( V_i = e^{-r \Delta t} [p \cdot V_{i+1}^u + (1-p) \cdot V_{i+1}^d] \)
+                </div>
+                <p>
+                    Where:
+                </p>
+                <ul>
+                    <li>\( \Delta t = \frac{T}{N} \) is the length of each time step, where \( T \) is the time to expiration and \( N \) is the number of steps.</li>
+                    <li>\( u = e^{\sigma \sqrt{\Delta t}} \) is the up factor, representing the proportion by which the asset price will increase in an up move.</li>
+                    <li>\( d = \frac{1}{u} \) is the down factor, representing the proportion by which the asset price will decrease in a down move.</li>
+                    <li>\( p = \frac{e^{r \Delta t} - d}{u - d} \) is the risk-neutral probability of an up move, ensuring that the expected return of the asset under the risk-neutral measure is the risk-free rate.</li>
+                </ul>
+                <p>
+                    The BOPM is particularly useful because it can be applied to a wide range of financial derivatives and can be extended to model complex features like varying interest rates or dividends. While the model is computationally intensive for a large number of steps, it provides a flexible and intuitive framework for option pricing.
+                </p>
+            </div>
+            <button class="return-button" onclick="location.href='index.html'">Return to Home</button>
+        </div>
+    </div>
+
+    <script>
+        function calculateOptionPrice(optionType) {
+            const S = parseFloat(document.getElementById('stock-price').value);
+            const K = parseFloat(document.getElementById('strike-price').value);
+            const T = parseFloat(document.getElementById('days-to-maturity').value) / 365;
+            const r = parseFloat(document.getElementById('risk-free-rate').value);
+            const sigma = parseFloat(document.getElementById('volatility').value);
+            const steps = parseInt(document.getElementById('time-steps').value);
+    
+            if (isNaN(S) || isNaN(K) || isNaN(T) || isNaN(r) || isNaN(sigma) || isNaN(steps)) {
+                document.getElementById('result').innerText = "Please enter valid inputs.";
+                return;
+            }
+    
+            const dT = T / steps;
+            const u = Math.exp(sigma * Math.sqrt(dT));
+            const d = 1 / u;
+            const a = Math.exp(r * dT);
+            const p = (a - d) / (u - d);
+            const q = 1 - p;
+    
+            // Initialize arrays for stock prices and option values
+            let stockPrices = new Array(steps + 1);
+            let optionValues = new Array(steps + 1);
+    
+            // Calculate the stock prices and option values at maturity
+            for (let j = 0; j <= steps; j++) {
+                stockPrices[j] = S * Math.pow(u, j) * Math.pow(d, steps - j);
+                if (optionType === 'call') {
+                    optionValues[j] = Math.max(stockPrices[j] - K, 0);
+                } else {
+                    optionValues[j] = Math.max(K - stockPrices[j], 0);
+                }
+            }
+    
+            // Backward induction to calculate option price at the initial node
+            for (let i = steps - 1; i >= 0; i--) {
+                for (let j = 0; j <= i; j++) {
+                    stockPrices[j] = S * Math.pow(u, j) * Math.pow(d, i - j); // Recalculate stock price
+                    optionValues[j] = Math.exp(-r * dT) * (p * optionValues[j + 1] + q * optionValues[j]);
+                }
+            }
+    
+            document.getElementById('result').innerText = `Estimated ${optionType === 'call' ? 'Call' : 'Put'} Option Price: $${optionValues[0].toFixed(2)}`;
+    
+            displayTreeVisualization(S, u, d, optionValues, steps);
+        }
+    
+        function displayTreeVisualization(S, u, d, optionValues, steps) {
+            const treeContainer = document.getElementById('tree-visualization');
+            treeContainer.innerHTML = ''; // Clear previous tree
+    
+            const tree = document.createElement('div');
+            tree.style.display = 'flex';
+            tree.style.justifyContent = 'center';
+            tree.style.alignItems = 'center';
+            tree.style.flexDirection = 'column';
+    
+            // Display the binomial tree
+            for (let i = 0; i <= steps; i++) {
+                const row = document.createElement('div');
+                row.style.display = 'flex';
+                row.style.justifyContent = 'center';
+                row.style.marginTop = '5px';
+    
+                for (let j = 0; j <= i; j++) {
+                    const node = document.createElement('div');
+                    const stockPrice = S * Math.pow(u, j) * Math.pow(d, i - j);
+                    node.style.margin = '0 5px';
+                    node.style.padding = '5px';
+                    node.style.border = '1px solid #4D243D';
+                    node.style.borderRadius = '3px';
+                    node.style.backgroundColor = '#D0A98F';
+                    node.innerText = `$${stockPrice.toFixed(2)}`;
+                    row.appendChild(node);
+                }
+    
+                tree.appendChild(row);
+            }
+    
+            treeContainer.appendChild(tree);
+        }
+    </script>    
+</body>
+</html>

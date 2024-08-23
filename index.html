@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Option Pricing Models</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: "Jersey 10", sans-serif;
+            height: 100vh;
+            margin: 0;
+            background-color: #4D243D;
+            color: #4D243D;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .floating-symbol {
+            position: absolute;
+            font-size: 2em;
+            z-index: 0; /* Ensure symbols stay behind the content */
+        }
+
+        .blurred {
+            filter: blur(5px);
+            color: rgba(0, 0, 0, 0.3);
+            z-index: 2; /* Bring blurred symbols to the front */
+        }
+
+        .sharp {
+            color: rgba(255, 255, 255, 0.2);
+            z-index: 1;
+        }
+
+        @keyframes floatFromTop {
+            0% {
+                transform: translateY(calc(-100vh + 50vh)) rotate(0deg); /* Start from within the viewport */
+                opacity: 0.5; /* Slight opacity to simulate ongoing motion */
+            }
+            100% {
+                transform: translateY(100vh) rotate(360deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes floatFromBottom {
+            0% {
+                transform: translateY(calc(100vh - 50vh)) rotate(0deg);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-100vh) rotate(-360deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes floatFromLeft {
+            0% {
+                transform: translateX(calc(-100vw + 50vw)) rotate(0deg);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateX(100vw) rotate(360deg);
+                opacity: 1;
+            }
+        }
+
+        @keyframes floatFromRight {
+            0% {
+                transform: translateX(calc(100vw - 50vw)) rotate(0deg);
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateX(-100vw) rotate(-360deg);
+                opacity: 1;
+            }
+        }
+
+        .container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 80%;
+            max-width: 1200px;
+            padding: 40px;
+            background-color: rgba(255, 220, 200, 0.9); /* Soft peach color with 90% opacity */
+            border-radius: 15px; /* Rounded corners */
+            box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.3);
+            z-index: 3; /* Ensure it's above the floating symbols */
+        }
+
+        .left-side {
+            flex: 1;
+            padding-right: 40px;
+        }
+
+        h1 {
+            font-size: 4em;
+            color: #4D243D;
+            margin: 0;
+            line-height: 1.1;
+        }
+
+        h2 {
+            font-size: 1.5em;
+            color: #4D243D;
+            margin-top: 10px;
+            font-weight: normal;
+        }
+
+        .right-side {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        button {
+            padding: 15px 30px;
+            margin: 10px 0;
+            font-size: 1.5em;
+            cursor: pointer;
+            border: 2px solid #4D243D;
+            background-color: #EDD4B2;
+            color: #4D243D;
+            font-family: "Jersey 10", sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            text-transform: uppercase;
+            width: 100%;
+            text-align: left;
+            border-radius: 5px; /* Rounded corners for buttons */
+        }
+
+        button:hover {
+            background-color: #4D243D;
+            color: #EDD4B2;
+        }
+
+        button:focus {
+            outline: none;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+                text-align: center;
+            }
+
+            .left-side, .right-side {
+                padding: 20px;
+                width: 100%;
+            }
+
+            h1 {
+                font-size: 3em;
+            }
+
+            h2 {
+                font-size: 1.2em;
+            }
+
+            button {
+                width: 100%;
+                margin: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="symbol-container"></div>
+
+    <div class="container">
+        <div class="left-side">
+            <h1>Option Pricing Models</h1>
+            <h2>Made by Flaroon ~ Tirth Patel</h2>
+        </div>
+        <div class="right-side">
+            <button onclick="location.href='binomial.html'">Binomial Model</button>
+            <button onclick="location.href='montecarlo.html'">Monte Carlo Model</button>
+            <button onclick="location.href='blackscholes.html'">Black-Scholes Model</button>
+        </div>
+    </div>
+
+    <script>
+        // Array of mathematical symbols
+        const symbols = ['√', 'π', '∫', 'Δ', 'Σ', 'θ', '∞', '∂', 'x', 'y', 'z', 'f(x)', 'e', 'i', '+', '-', '=', '≠', '<', '>', '±', '∑'];
+
+        // Function to create floating symbols
+        function createFloatingSymbol() {
+            const symbolContainer = document.getElementById('symbol-container');
+            const symbol = document.createElement('div');
+            symbol.classList.add('floating-symbol');
+
+            // Randomly decide if the symbol is in the foreground (blurred) or background (sharp)
+            if (Math.random() > 0.5) {
+                symbol.classList.add('blurred');
+            } else {
+                symbol.classList.add('sharp');
+            }
+
+            symbol.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+
+            // Assign a random animation direction
+            const animationTypes = ['floatFromTop', 'floatFromBottom', 'floatFromLeft', 'floatFromRight'];
+            const animationType = animationTypes[Math.floor(Math.random() * animationTypes.length)];
+            symbol.style.animation = `${animationType} 30s infinite linear`;
+
+            symbol.style.left = Math.random() * 100 + 'vw';
+            symbol.style.top = Math.random() * 100 + 'vh';  // Adjust starting position
+            symbol.style.fontSize = 6 + Math.random() * 5 + 'em'; // Adjusted for visibility
+
+            symbolContainer.appendChild(symbol);
+
+            // Remove the symbol after it finishes animation to avoid clutter
+            symbol.addEventListener('animationend', () => {
+                symbol.remove();
+            });
+        }
+
+        // Create floating symbols at intervals
+        setInterval(createFloatingSymbol, 500);
+
+        // Initially create some floating symbols to start with
+        for (let i = 0; i < 20; i++) {  // Increased the count to make more symbols appear instantly
+            createFloatingSymbol();
+        }
+    </script>
+</body>
+</html>

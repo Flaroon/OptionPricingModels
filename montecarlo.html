@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Monte Carlo Simulation for Option Pricing</title>
+    <!-- Include Jersey 10 Font from Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Jersey+10&display=swap" rel="stylesheet">
+    <!-- Include MathJax for LaTeX rendering -->
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        html, body {
+            font-family: "Jersey 10", sans-serif;
+            background-color: #EDD4B2; /* Single background color */
+            color: #4D243D;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Align items to the top to reduce space */
+            height: 100vh;
+            margin: 0;
+            padding: 10px 10px;
+            overflow: hidden; /* Disable scrolling */
+        }
+
+        .main-content {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            height: 100%;
+        }
+        .left-panel {
+            width: 57%;
+            display: flex;
+            flex-direction: column;
+        }
+        .container, .visualization-section {
+            background: rgba(255, 255, 255, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        .inputs {
+            margin-bottom: 10px;
+            margin-right: 25px;
+        }
+        .inputs label {
+            display: block;
+            margin: 10px 0 5px;
+        }
+        .inputs input {
+            padding: 10px;
+            font-size: 1em;
+            border: 2px solid #4D243D;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 100%;
+            margin-bottom: 10px;
+        }
+        .buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        button {
+            font-family: "Jersey 10", sans-serif;
+            padding: 10px 20px;
+            font-size: 1.2em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 2px solid #4D243D;
+            background-color: #D0A98F;
+            color: #4D243D;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            width: 48%;
+        }
+        button:hover {
+            background-color: #4D243D;
+            color: #EDD4B2;
+            transform: translateY(-5px);
+            box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.4);
+        }
+        .result-container {
+            margin-top: 15px;
+            font-size: 1.5em;
+            font-weight: bold;
+            display: flex;
+            justify-content: center;
+        }
+        .result {
+            width: 100%;
+            padding: 10px;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            color: #4D243D;
+        }
+        .info-section {
+           width: 40%;
+           height: 93%;
+           display: flex;
+           flex-direction: column;
+           background: rgba(255, 255, 255, 0.8);
+           padding: 20px;
+           border-radius: 10px;
+           box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+           text-align: left;
+           overflow-y: auto; /* Enable scrolling if content overflows */
+        }
+
+        /* Custom Scrollbar */
+        .info-section::-webkit-scrollbar {
+            width: 12px; /* Set width of scrollbar */
+        }
+
+        .info-section::-webkit-scrollbar-track {
+            background: #D0A98F; /* Background of the scrollbar track */
+            border-radius: 10px;
+        }
+
+        .info-section::-webkit-scrollbar-thumb {
+            background-color: #4D243D; /* Scrollbar color */
+            border-radius: 10px;
+            border: 3px solid #D0A98F; /* Creates padding around thumb */
+        }
+
+        .info-section::-webkit-scrollbar-thumb:hover {
+            background-color: #EDD4B2; /* Color on hover */
+        }
+
+        .info-section h2 {
+            font-size: 2em;
+            margin-bottom: 15px;
+        }
+        .info-section h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        .info-section p {
+            font-size: 1.1em;
+            margin-bottom: 10px;
+            line-height: 1;
+        }
+        .info-section .equation {
+            background-color: #f9f9f9;
+            padding: 10px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            box-shadow: inset 0px 0px 5px rgba(0, 0, 0, 0.1);
+            margin-bottom: 15px;
+        }
+        .visualization-section h3 {
+            margin-bottom: 15px;
+            margin-top: 0;
+            font-size: 1.8em;
+        }
+        .visualization-section .simulation-visualization {
+            width: 100%;
+            height: 230px; /* Fix the height to prevent overflow */
+            background-color: #f0f0f0;
+            border: 2px solid #4D243D;
+            border-radius: 5px;
+            overflow: hidden; /* Prevent overflow of the canvas */
+            color: #4D243D;
+            font-size: 1.5em;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .return-button {
+            padding: 20px;
+            font-size: 1.5em;
+            cursor: pointer;
+            border-radius: 5px;
+            border: 2px solid #4D243D;
+            background-color: #D0A98F;
+            color: #4D243D;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+            box-shadow: 3px 3px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+            width: 100%;
+            margin-top: 0; /* Remove any margin on top of the button */
+        }
+        .return-button:hover {
+            background-color: #4D243D;
+            color: #EDD4B2;
+            transform: translateY(-5px);
+            box-shadow: 3px 3px 15px rgba(0, 0, 0, 0.4);
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content">
+        <div class="left-panel">
+            <div class="container">
+                <h1>Monte Carlo Simulation for Option Pricing</h1>
+                <div class="inputs">
+                    <label for="stock-price">Current Stock Price:</label>
+                    <input type="number" id="stock-price" placeholder="e.g., 100">
+
+                    <label for="strike-price">Strike Price:</label>
+                    <input type="number" id="strike-price" placeholder="e.g., 100">
+
+                    <label for="days-to-maturity">Days to Maturity:</label>
+                    <input type="number" id="days-to-maturity" placeholder="e.g., 365">
+
+                    <label for="risk-free-rate">Risk-Free Interest Rate (as a decimal):</label>
+                    <input type="number" step="0.01" id="risk-free-rate" placeholder="e.g., 0.05">
+
+                    <label for="volatility">Volatility (as a decimal):</label>
+                    <input type="number" step="0.01" id="volatility" placeholder="e.g., 0.2">
+
+                    <label for="num-simulations">Number of Simulations:</label>
+                    <input type="number" id="num-simulations" placeholder="e.g., 10000">
+                </div>
+                <div class="buttons">
+                    <button onclick="calculateMonteCarloPrice('call')">Calculate Call Price</button>
+                    <button onclick="calculateMonteCarloPrice('put')">Calculate Put Price</button>
+                </div>
+                <div class="result-container">
+                    <div class="result" id="result">
+                        Estimated Option Price: $0.00
+                    </div>
+                </div>
+            </div>
+
+            <div class="visualization-section">
+                <h3>Monte Carlo Simulation Paths</h3>
+                <canvas id="simulationCanvas" class="simulation-visualization"></canvas>
+            </div>
+        </div>
+
+        <div class="info-section">
+            <div>
+                <h2>About Monte Carlo Simulation</h2>
+                <p>
+                    The Monte Carlo Simulation is a computational technique used to estimate the price of an option by simulating the price path of the underlying asset multiple times. The method involves generating random price paths, calculating the option payoff for each path, and then averaging the results to estimate the option price.
+                </p>
+                <p>
+                    The simulation assumes that the price of the underlying asset follows a geometric Brownian motion with a constant drift and volatility. For each simulation, the future price of the asset is projected based on these assumptions, and the option payoff is calculated at expiration. The final option price is then the average of these payoffs, discounted back to the present value using the risk-free rate.
+                </p>
+                <div class="equation">
+                    <strong>Call Option Price:</strong><br>
+                    \( C = e^{-rT} \cdot \frac{1}{N} \sum_{i=1}^{N} \max(S_i(T) - K, 0) \)
+                </div>
+                <div class="equation">
+                    <strong>Put Option Price:</strong><br>
+                    \( P = e^{-rT} \cdot \frac{1}{N} \sum_{i=1}^{N} \max(K - S_i(T), 0) \)
+                </div>
+                <p>
+                    Where:
+                </p>
+                <ul>
+                    <li>\( N \) is the number of simulations.</li>
+                    <li>\( S_i(T) \) is the simulated price of the underlying asset at maturity.</li>
+                    <li>\( K \) is the strike price of the option.</li>
+                    <li>\( r \) is the risk-free interest rate.</li>
+                    <li>\( T \) is the time to maturity in years.</li>
+                </ul>
+
+                <h3>Advantages of Monte Carlo Simulation</h3>
+                <p>
+                    Monte Carlo Simulation offers several advantages:
+                </p>
+                <ul>
+                    <li><strong>Flexibility:</strong> It can be applied to a wide range of financial instruments and scenarios, including those with complex features such as path dependencies, American-style options, and varying interest rates.</li>
+                    <li><strong>Accuracy:</strong> By increasing the number of simulations, the accuracy of the estimate can be improved.</li>
+                    <li><strong>Scalability:</strong> Monte Carlo methods are easily scalable, allowing for more detailed analysis as computational power increases.</li>
+                </ul>
+
+                <h3>Disadvantages of Monte Carlo Simulation</h3>
+                <p>
+                    Despite its benefits, Monte Carlo Simulation also has some disadvantages:
+                </p>
+                <ul>
+                    <li><strong>Computationally Intensive:</strong> Large numbers of simulations can be computationally expensive, requiring significant processing power and time.</li>
+                    <li><strong>Randomness Dependency:</strong> The results depend on the quality of random number generation and can vary between different runs of the simulation.</li>
+                    <li><strong>Convergence Speed:</strong> Convergence to accurate estimates can be slow, especially for complex models or instruments.</li>
+                </ul>
+
+                <h3>Common Applications of Monte Carlo Simulation</h3>
+                <p>
+                    Monte Carlo Simulation is widely used in various fields of finance, including:
+                </p>
+                <ul>
+                    <li><strong>Option Pricing:</strong> Estimating the fair value of complex options and derivatives.</li>
+                    <li><strong>Risk Management:</strong> Assessing the risk of portfolios under different market scenarios.</li>
+                    <li><strong>Portfolio Optimization:</strong> Identifying the optimal mix of assets to maximize returns while minimizing risk.</li>
+                    <li><strong>Corporate Finance:</strong> Valuing real options and capital budgeting decisions.</li>
+                </ul>
+
+                <h3>Overview of the Monte Carlo Algorithm</h3>
+                <p>
+                    The Monte Carlo algorithm for option pricing typically follows these steps:
+                </p>
+                <ol>
+                    <li>Generate multiple random price paths for the underlying asset using the specified volatility, drift, and time horizon.</li>
+                    <li>For each path, calculate the payoff of the option at maturity.</li>
+                    <li>Average the payoffs from all simulations.</li>
+                    <li>Discount the average payoff back to the present value using the risk-free interest rate.</li>
+                    <li>The resulting value is the estimated price of the option.</li>
+                </ol>
+
+            </div>
+            <button class="return-button" onclick="location.href='index.html'">Return to Home</button>
+        </div>
+    </div>
+
+    <script>
+        function calculateMonteCarloPrice(optionType) {
+            const S = parseFloat(document.getElementById('stock-price').value);
+            const K = parseFloat(document.getElementById('strike-price').value);
+            const T = parseFloat(document.getElementById('days-to-maturity').value) / 365;
+            const r = parseFloat(document.getElementById('risk-free-rate').value);
+            const sigma = parseFloat(document.getElementById('volatility').value);
+            const numSimulations = parseInt(document.getElementById('num-simulations').value);
+
+            if (isNaN(S) || isNaN(K) || isNaN(T) || isNaN(r) || isNaN(sigma) || isNaN(numSimulations)) {
+                document.getElementById('result').innerText = "Please enter valid inputs.";
+                return;
+            }
+
+            let payoffSum = 0;
+            const paths = [];
+            const timeSteps = 100;
+            const dt = T / timeSteps;
+
+            for (let i = 0; i < numSimulations; i++) {
+                let path = [S];
+                for (let t = 1; t <= timeSteps; t++) {
+                    const rand = Math.random();
+                    const dS = path[t-1] * Math.exp((r - 0.5 * sigma ** 2) * dt + sigma * Math.sqrt(dt) * rand);
+                    path.push(dS);
+                }
+                paths.push(path);
+
+                const ST = path[path.length - 1];
+                if (optionType === 'call') {
+                    payoffSum += Math.max(ST - K, 0);
+                } else {
+                    payoffSum += Math.max(K - ST, 0);
+                }
+            }
+
+            const optionPrice = Math.exp(-r * T) * (payoffSum / numSimulations);
+            document.getElementById('result').innerText = `Estimated ${optionType === 'call' ? 'Call' : 'Put'} Option Price: $${optionPrice.toFixed(2)}`;
+
+            drawSimulationPaths(paths, timeSteps);
+        }
+
+        function drawSimulationPaths(paths, timeSteps) {
+            const canvas = document.getElementById('simulationCanvas');
+            const ctx = canvas.getContext('2d');
+            const maxPathValue = Math.max(...paths.flat());
+
+            canvas.width = canvas.parentElement.clientWidth; // Set canvas width to parent width
+            canvas.height = canvas.parentElement.clientHeight; // Set canvas height to parent height
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.lineWidth = 1;
+
+            const timeStepWidth = canvas.width / timeSteps;
+
+            paths.slice(0, 10).forEach(path => { // Draw first 10 paths
+                ctx.beginPath();
+                ctx.moveTo(0, canvas.height - (path[0] / maxPathValue * canvas.height));
+                for (let t = 1; t <= timeSteps; t++) {
+                    ctx.lineTo(t * timeStepWidth, canvas.height - (path[t] / maxPathValue * canvas.height));
+                }
+                ctx.strokeStyle = `rgba(77, 36, 61, 0.5)`;
+                ctx.stroke();
+            });
+        }
+    </script>
+</body>
+</html>
